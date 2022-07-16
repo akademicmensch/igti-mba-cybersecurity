@@ -1,0 +1,59 @@
+version: '3.7'
+
+services:
+  campaign_service:
+    build: ./campaign-service
+    command: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+    volumes:
+      - ./campaign-service/:/app/
+    ports:
+      - 8001:8000
+    environment:
+      - DATABASE_URI=postgresql://campaign_db_username:campaign_db_password@campaign_db/campaign_db_dev
+      - ORTOGONAL_ADVANCE_SERVICE_HOST_URL=http://ortogonal_advance_service:8000/api/v1/ortogonal/
+    depends_on:
+      - campaign_db
+
+  campaign_db:
+    image: postgres:12.1-alpine
+    volumes:
+      - postgres_data_campaign:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=campaign_db_username
+      - POSTGRES_PASSWORD=campaign_db_password
+      - POSTGRES_DB=campaign_db_dev
+
+  ortogonal_advance_service:
+    build: ./ortogonal-advance-service
+    command: uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+    volumes:
+      - ./ortogonal-advance-service/:/app/
+    ports:
+      - 8002:8000
+    environment:
+      - DATABASE_URI=postgresql://ortogonal_db_username:ortogonal_db_password@ortogonal_db/ortogonal_db_dev
+    depends_on:
+      - ortogonal_db
+
+  ortogonal_db:
+    image: postgres:12.1-alpine
+    volumes:
+      - postgres_data_ortogonal:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=ortogonal_db_username
+      - POSTGRES_PASSWORD=ortogonal_db_password
+      - POSTGRES_DB=ortogonal_db_dev
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./nginx_config.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - ortogonal_advance_service
+      - campaign_service
+
+volumes:
+  postgres_data_campaign:
+  postgres_data_ortogonal:
