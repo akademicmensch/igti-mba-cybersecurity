@@ -1,45 +1,41 @@
+from getopt import gnu_getopt
 import string
 from typing import List
 from app.api.service_gophish import api
-from app.api.models import GophishUser, GophishGroup 
+from app.api.models import GophishUser, GophishGroup
 from gophish.models import *
 
 
 newGroup = List(GophishGroup)
+defaultgroups = []
+group = Group(name = 'Empresa a ser testada')
+defaultgroups.append(group)
 def prepareUserForGroup(first_name : string, last_name : string, email: string, position: string):
     return newGroup.append(GophishUser(first_name, last_name, email, position))
 
-
-
 def createGroup(name: string, targets: List(GophishGroup)):
-
-
-
+    group = Group(name='Empresa a ser testada', targets=targets)
+    group = api.groups.post(group)
     return
 
-def sendCampaign():
-    groups = [Group(name='Existing Group')]
-    page = Page(name='Existing Page')
-    template = Template(name='Existing Template')
-    smtp = SMTP(name='Existing Profile')
+def sendCampaign(temp: Template, camp: Campaign):
+    groups = defaultgroups
+    template = temp
+    smtp = SMTP(name='Empresa a ser testada')
     url = 'http://phishing_server'
     campaign = Campaign(
-        name='Example Campaign', groups=groups, page=page,
-        template=template, smtp=smtp)
+        name=camp.name, groups=groups,
+        template=temp, smtp=smtp)
 
     campaign = api.campaigns.post(campaign)
-    print campaign.id
 
     return
 
-def createTemplate():
-
-    template = Template(name='Test Template',
-    html='<html><body>Click <a href="{{.URL}}">here</a></body></html>')
+def createTemplate(template_name: string, html_string_template: string):
+    template = Template(name=template_name,
+    html=html_string_template)
 
     template = api.templates.post(template)
-    print template.id
-
     return
 
 def sendProfile():
@@ -50,5 +46,4 @@ def sendProfile():
     smtp.ignore_cert_errors = True
 
     smtp = api.smtp.post(smtp)
-    print smtp.id
     return
